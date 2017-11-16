@@ -8,6 +8,8 @@ import string
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.tokenize import sent_tokenize
 
 comments = []
 
@@ -58,14 +60,26 @@ def delete_stopwords(tokenized_comment_no_punctuation):
 
     return tokenized_comments_no_stopwords
 
+def stemm_tokens(tokenize_comments_no_stemming):
+    stemmed_comments=[]
+    ps=PorterStemmer()
+    for comment in tokenize_comments_no_stemming:
+        for word in comment:
+            stemmed_comments.append(ps.stem(word))
+            print(stemmed_comments)
+
+    return stemmed_comments
+
 
 if __name__ == "__main__":
     comments = []
     tokenized_comments = []
     tokenized_comments_no_punctuation=[]
     tokenized_comments_no_stopwords=[]
+    stemmed_comments=[]
     comments = readFromFile()
     tokenized_comments = tokenize_comments(comments)
     tokenized_comments_no_punctuation=delete_punctuation(tokenized_comments)
     tokenized_comments_no_stopwords=delete_stopwords(tokenized_comments_no_punctuation)
-    print(tokenized_comments_no_punctuation)
+    stemmed_comments=stemm_tokens(tokenized_comments_no_stopwords)
+    print(tokenized_comments_no_stopwords)
