@@ -20,7 +20,17 @@ def readFromFile():
             # print(row)
             # print(row[0])
             # print(row[0], row[1], row[2])
+
     return comments
+
+
+def standardize_urls(comments):
+    url_regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    new_review = []
+    for comment in comments:
+        new_review.append(re.sub(url_regex, "replacedurl", comment))
+
+    return new_review
 
 
 def tokenize_comments(comments):
@@ -66,11 +76,13 @@ def stemm_tokens(tokens):
         for word in comment:
             new_term_vector.append(ls.stem(word))
         stemmed_comments.append(new_term_vector)
+
     return stemmed_comments
 
 
 if __name__ == "__main__":
     comments = readFromFile()
+    comments = standardize_urls(comments)
     tokenized_comments = tokenize_comments(comments)
     tokenized_comments = delete_punctuation(tokenized_comments)
     tokenized_comments = delete_stopwords(tokenized_comments)
