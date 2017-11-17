@@ -8,7 +8,7 @@ import string
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
+from nltk.stem import LancasterStemmer
 from nltk.tokenize import sent_tokenize
 
 comments = []
@@ -22,7 +22,7 @@ def readFromFile():
             comments.append(row[3])
             # print(row)
             # print(row[0])
-            #print(row[0], row[1], row[2])
+            # print(row[0], row[1], row[2])
     return comments
 
 
@@ -63,19 +63,19 @@ def delete_stopwords(tokens):
 
 def stemm_tokens(tokens):
     stemmed_comments = []
-    ps = PorterStemmer()
+    ls = LancasterStemmer()
     for comment in tokens:
         new_term_vector = []
         for word in comment:
-            new_term_vector.append(ps.stem(word))
+            new_term_vector.append(ls.stem(word))
         stemmed_comments.append(new_term_vector)
     return stemmed_comments
 
 
 if __name__ == "__main__":
     comments = readFromFile()
-    comments = tokenize_comments(comments)
-    comments = delete_punctuation(comments)
-    comments = delete_stopwords(comments)
-    #comments = stemm_tokens(comments)
-    print(comments)
+    tokenized_comments = tokenize_comments(comments)
+    tokenized_comments = delete_punctuation(tokenized_comments)
+    tokenized_comments = delete_stopwords(tokenized_comments)
+    tokenized_comments = stemm_tokens(tokenized_comments)
+    print(tokenized_comments)
