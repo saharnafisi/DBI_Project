@@ -4,14 +4,14 @@ import string
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import LancasterStemmer
+from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize
 
 # nltk.download('punkt')
 # nltk.download('stopwords')
 
 
-def readFromFile():
+def read_from_file():
     comments = []
     with open('./dataset/Youtube01-Psy.csv', encoding="utf8") as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
@@ -78,11 +78,11 @@ def delete_stopwords(tokenized_comments):
 
 def stemm_tokens(tokenized_comments):
     stemmed_comments = []
-    ls = LancasterStemmer()
+    ps = PorterStemmer()
     for comment in tokenized_comments:
         new_term_vector = []
         for word in comment:
-            new_term_vector.append(ls.stem(word))
+            new_term_vector.append(ps.stem(word))
         stemmed_comments.append(new_term_vector)
 
     return stemmed_comments
@@ -94,11 +94,22 @@ def create_set_of_words(tokenized_comments):
         for token in comment:
             set_of_words.add(token)
 
-    return set_of_words
+    return list(set_of_words)
+
+
+def save_structured_data_set(set_of_words, tokenized_comments):
+    with open('temp.csv', 'w', encoding="utf8", newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(set_of_words)
+        for comment in comments:
+            new_row = []
+            for word in set_of_words:
+                new_row.append(comment.count(word))
+            writer.writerow(new_row)
 
 
 if __name__ == "__main__":
-    comments = readFromFile()
+    comments = read_from_file()
     comments = standardize_urls(comments)
     comments = remove_special_chars(comments)
     tokenized_comments = tokenize_comments(comments)
@@ -106,4 +117,5 @@ if __name__ == "__main__":
     tokenized_comments = delete_stopwords(tokenized_comments)
     tokenized_comments = stemm_tokens(tokenized_comments)
     set_of_words = create_set_of_words(tokenized_comments)
-    print(set_of_words)
+    save_structured_data_set(set_of_words, tokenized_comments)
+    # print(set_of_words)
