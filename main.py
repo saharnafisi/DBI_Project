@@ -33,13 +33,13 @@ def tokenize_comments(comments):
 
 
 def delete_punctuation(tokenized_comments):
-    #delete punctuation marks from tokens
-    regex = re.compile('[%s]' % re.escape(string.punctuation)) 
+    # delete punctuation marks from tokens
+    regex = re.compile('[%s]' % re.escape(string.punctuation))
     tokenized_comment_no_punctuation = []
 
     for review in tokenized_comments:
         new_review = []
-        for token in review: 
+        for token in review:
             new_token = regex.sub(u'', token)
             if not new_token == u'':
                 new_review.append(new_token)
@@ -51,7 +51,7 @@ def delete_punctuation(tokenized_comments):
 def delete_stopwords(tokenized_comment_no_punctuation):
 
     tokenized_comments_no_stopwords = []
-    for comment in tokenized_comments_no_stopwords:
+    for comment in tokenized_comment_no_punctuation:
         new_term_vector = []
         for word in comment:
             if not word in stopwords.words('english'):
@@ -60,26 +60,28 @@ def delete_stopwords(tokenized_comment_no_punctuation):
 
     return tokenized_comments_no_stopwords
 
-def stemm_tokens(tokenize_comments_no_stemming):
-    stemmed_comments=[]
-    ps=PorterStemmer()
-    for comment in tokenize_comments_no_stemming:
-        for word in comment:
-            stemmed_comments.append(ps.stem(word))
-            print(stemmed_comments)
 
+def stemm_tokens(tokenize_comments_no_stemming):
+    stemmed_comments = []
+    ps = PorterStemmer()
+    for comment in tokenize_comments_no_stemming:
+        new_term_vector = []
+        for word in comment:
+            new_term_vector.append(ps.stem(word))
+        stemmed_comments.append(new_term_vector)
     return stemmed_comments
 
 
 if __name__ == "__main__":
     comments = []
     tokenized_comments = []
-    tokenized_comments_no_punctuation=[]
-    tokenized_comments_no_stopwords=[]
-    stemmed_comments=[]
+    tokenized_comments_no_punctuation = []
+    tokenized_comments_no_stopwords = []
+    stemmed_comments = []
     comments = readFromFile()
     tokenized_comments = tokenize_comments(comments)
-    tokenized_comments_no_punctuation=delete_punctuation(tokenized_comments)
-    tokenized_comments_no_stopwords=delete_stopwords(tokenized_comments_no_punctuation)
-    stemmed_comments=stemm_tokens(tokenized_comments_no_stopwords)
-    print(tokenized_comments_no_stopwords)
+    tokenized_comments_no_punctuation = delete_punctuation(tokenized_comments)
+    tokenized_comments_no_stopwords = delete_stopwords(
+        tokenized_comments_no_punctuation)
+    stemmed_comments = stemm_tokens(tokenized_comments_no_stopwords)
+    print(stemmed_comments)
