@@ -1,8 +1,4 @@
 import csv
-import nltk
-# nltk.download('punkt')
-# nltk.download('stopwords')
-
 import re
 import string
 
@@ -11,7 +7,8 @@ from nltk.corpus import stopwords
 from nltk.stem import LancasterStemmer
 from nltk.tokenize import sent_tokenize
 
-comments = []
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 
 def readFromFile():
