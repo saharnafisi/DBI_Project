@@ -21,8 +21,9 @@ class Comment:
         self.content = content
         self.processed_content = content
         self.tokens = None
-        self.real_class = real_class
+        self.real_class = "spam" if(real_class == "1") else "no_spam"
         self.predicted_class = None
+        self.vector = []
 
     def __standardize_urls(self):
         url_regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
@@ -74,8 +75,15 @@ class Comment:
         self.__delete_stopwords()
         self.__stemm_tokens()
 
-        def claculate_distance():
-            print("this function must be complete later!")
+    def init_vector(self):
+        # TODO: throw an error if set_of_words has None value that
+        # says to programmer "run 'create_set_of_words' function first"
+        if self.set_of_words:
+            for word in self.set_of_words:
+                self.vector.append(self.processed_content.count(word))
+
+    def claculate_distance():
+        print("this function must be complete later!")
 
 
 def read_from_file():
@@ -98,6 +106,7 @@ def create_set_of_words(tokenized_comments):
 
 
 def save_structured_data_set(set_of_words, tokenized_comments):
+    # TODO: Use vector attribute of Comment class to save data on disk
     with open('temp.csv', 'w', encoding="utf8", newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(set_of_words)
@@ -108,14 +117,24 @@ def save_structured_data_set(set_of_words, tokenized_comments):
             writer.writerow(new_row)
 
 
-if __name__ == "__main__":
-    comments = read_from_file()
-
-    for comment in comments:
+def preprocess_training_dataset(training_dataset):
+    # this function creates set of words and saves structured data on disk
+    for comment in training_dataset:
         comment.preprocess_content()
 
     tokenized_comments_list = [
-        comment.processed_content for comment in comments]
-
+        comment.processed_content for comment in training_dataset]
     Comment.set_of_words = create_set_of_words(tokenized_comments_list)
+
+    for comment in training_dataset:
+        comment.init_vector()
+
     save_structured_data_set(Comment.set_of_words, tokenized_comments_list)
+
+
+if __name__ == "__main__":
+    comments = read_from_file()
+    training_dataset = comments[: int(0.7 * len(comments))]
+    test_case_dataset = comments[int(0.7 * len(comments)):]
+
+    preprocess_training_dataset(training_dataset)
