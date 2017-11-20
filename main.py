@@ -20,7 +20,6 @@ class Comment:
         self.id = id
         self.content = content
         self.processed_content = content
-        self.tokens = None
         self.real_class = "spam" if(real_class == "1") else "no_spam"
         self.predicted_class = None
         self.vector = []
