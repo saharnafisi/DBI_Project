@@ -6,6 +6,9 @@
 # Advisor: Dr Ayoub Bagheri
 # Kashan University(Winter 2018)
 
+# for reading list of available datasets
+import os
+
 # A library for working with dataset files (*.csv)
 import csv
 
@@ -19,15 +22,16 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize
-nltk.download('punkt')
-nltk.download('stopwords')
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 
 class Comment:
     """Every comment becomes an instance of this class"""
 
-    # A static variable that is common between all objects of this class
+    # A static variable with dictionary type  that is common between all objects of this class
     # containes a set of all words without duplicat (bag of words)
+    # and number of occurance of that word in dataset
     set_of_words = None
 
     def __init__(self, id, content, real_class):
@@ -90,6 +94,7 @@ class Comment:
         self.processed_content = new_review
 
     def __stemm_tokens(self):
+        # reducing inflected (or sometimes derived) words to their word stem, base or root form
         stemmed_comments = []
         ps = PorterStemmer()
         new_review = []
@@ -99,6 +104,7 @@ class Comment:
         self.processed_content = new_review
 
     def preprocess_content(self):
+        # functions for preprocessing comment executes continuous in this function
         self.__standardize_urls()
         self.__remove_special_chars()
         self.__tokenize_comments()
@@ -107,45 +113,50 @@ class Comment:
         self.__stemm_tokens()
 
     def init_vector(self):
-        # TODO: throw an error if set_of_words has None value that
-        # says to programmer "run 'create_set_of_words' function first"
-        if self.set_of_words:
-            for word in self.set_of_words:
-                self.vector.append(self.processed_content.count(word))
+        # initialize to comment vector based on tf-idf of every word in comment
 
-    def claculate_distance():
+        # Throw an error if set_of_words has None value
+        if self.set_of_words is None:
+            raise ValueError("run 'create_set_of_words' function first")
+
+        for word in self.set_of_words:
+            self.vector.append(self.processed_content.count(word))
+
+    def claculate_similarity(comment):
+        # calculate similarity of 2 comments based on 'Cosine Similarity'
+        # TODO: complete this function
         print("this function must be complete later!")
 
 
-def read_from_file():
+def list_of_datesets():
+    # returns list of files in 'datasets' directory
+    return os.listdir("datasets")
+
+
+def read_from_file(file_name):
+    # reads the dataset file and puts each comment in an 'Comment' object
+    # and append all abjects to a list named 'comments' and returns the list
     comments = []
-    with open('./dataset/Youtube01-Psy.csv', encoding="utf8") as csvfile:
+    with open(f'./datasets/{file_name}', encoding="utf8") as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
         for row in readCSV:
+            # row[0]: id ,row[3]: content, row[4]: real_class
             comments.append(Comment(row[0], row[3], row[4]))
 
     return comments
 
 
 def create_set_of_words(tokenized_comments):
-    set_of_words = set()
+    # Iterates over all of comments and add none repetitive words(tokens) to dictionary
+    set_of_words = {}
     for comment in tokenized_comments:
         for token in comment:
-            set_of_words.add(token)
+            if not token in set_of_words:
+                set_of_words[token] = 1  # first occurance of word in data set
+            else:
+                set_of_words[token] += 1
 
-    return list(set_of_words)
-
-
-def save_structured_data_set(set_of_words, tokenized_comments):
-    # TODO: Use vector attribute of Comment class to save data on disk
-    with open('temp.csv', 'w', encoding="utf8", newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',')
-        writer.writerow(set_of_words)
-        for comment in tokenized_comments:
-            new_row = []
-            for word in set_of_words:
-                new_row.append(comment.count(word))
-            writer.writerow(new_row)
+    Comment.set_of_words = set_of_words
 
 
 def preprocess_training_dataset(training_dataset):
@@ -160,12 +171,32 @@ def preprocess_training_dataset(training_dataset):
     for comment in training_dataset:
         comment.init_vector()
 
-    save_structured_data_set(Comment.set_of_words, tokenized_comments_list)
+
+def save_structured_data_set(tokenized_comments):
+    # TODO: Use vector attribute of Comment class to save data on disk
+    with open('temp.csv', 'w', encoding="utf8", newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(set_of_words)
+        for comment in tokenized_comments:
+            new_row = []
+            for word in set_of_words:
+                new_row.append(comment.count(word))
+            writer.writerow(new_row)
 
 
 if __name__ == "__main__":
-    comments = read_from_file()
+    available_datasets = list_of_datesets()
+
+    for i in range(0, len(available_datasets)):
+        print(f"{i+1}.{available_datasets[i]}")
+
+    selected_ds_index = int(
+        input("Please select one of the above datasets for processing: ")) - 1
+
+    comments = read_from_file(available_datasets[selected_ds_index])
+
+    # 70٪ of selected dataset uses for training and 30% remaining uses for testing
     training_dataset = comments[: int(0.7 * len(comments))]
     test_case_dataset = comments[int(0.7 * len(comments)):]
 
-    preprocess_training_dataset(training_dataset)
+    # preprocess_training_dataset(training_dataset)
