@@ -6,6 +6,9 @@
 # Advisor: Dr Ayoub Bagheri
 # Kashan University(Winter 2018)
 
+# used for sqrt function
+import math
+
 # for reading list of available datasets
 import os
 
@@ -53,6 +56,9 @@ class Comment:
 
         # N dimension Vector (N: number of items in 'set_of_words')
         self.vector = []
+
+        # lenght of the vector
+        self.vector_lenght = None
 
     def __standardize_urls(self):
         # Replace all of URLs in comment with "replacedurl" phrase
@@ -119,13 +125,29 @@ class Comment:
         if self.set_of_words is None:
             raise ValueError("run 'create_set_of_words' function first")
 
-        for word in self.set_of_words:
-            self.vector.append(self.processed_content.count(word))
+        for word, tf in self.set_of_words.items():
+            self.vector.append(
+                self.processed_content.count(word) / self.set_of_words[word])  # represents tf-idf
 
-    def claculate_similarity(comment):
+    def calculate_lenght(self):
+        middle_sum = 0
+        for item in self.vector:
+            middle_sum += item * item
+
+        self.vector_lenght = math.sqrt(middle_sum)
+        return self.vector_lenght
+
+    def claculate_cosine_similarity(self, comment):
         # calculate similarity of 2 comments based on 'Cosine Similarity'
-        # TODO: complete this function
-        print("this function must be complete later!")
+        len1 = comment.calculate_lenght()
+        len2 = self.calculate_lenght()
+
+        middle_sum = 0
+
+        for i in range(0, len(self.vector)):
+            middle_sum += self.vector[i] * comment.vector[i]
+
+        return middle_sum / (len1 * len2)
 
 
 def list_of_datesets():
@@ -146,11 +168,16 @@ def read_from_file(file_name):
     return comments
 
 
-def create_set_of_words(tokenized_comments):
+def preprocess_comments(comments_obj_list):
+    for comment in comments_obj_list:
+        comment.preprocess_content()
+
+
+def create_set_of_words(comments_obj_list):
     # Iterates over all of comments and add none repetitive words(tokens) to dictionary
     set_of_words = {}
-    for comment in tokenized_comments:
-        for token in comment:
+    for comment in comments_obj_list:
+        for token in comment.processed_content:
             if not token in set_of_words:
                 set_of_words[token] = 1  # first occurance of word in data set
             else:
@@ -159,29 +186,27 @@ def create_set_of_words(tokenized_comments):
     Comment.set_of_words = set_of_words
 
 
-def preprocess_training_dataset(training_dataset):
-    # this function creates set of words and saves structured data on disk
-    for comment in training_dataset:
-        comment.preprocess_content()
-
-    tokenized_comments_list = [
-        comment.processed_content for comment in training_dataset]
-    Comment.set_of_words = create_set_of_words(tokenized_comments_list)
-
-    for comment in training_dataset:
+def init_comment_vectores(comments_obj_list):
+    for comment in comments_obj_list:
         comment.init_vector()
 
 
-def save_structured_data_set(tokenized_comments):
-    # TODO: Use vector attribute of Comment class to save data on disk
+def save_structured_data_set(comments_obj_list):
     with open('temp.csv', 'w', encoding="utf8", newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
-        writer.writerow(set_of_words)
-        for comment in tokenized_comments:
-            new_row = []
-            for word in set_of_words:
-                new_row.append(comment.count(word))
-            writer.writerow(new_row)
+        list_of_words = []
+        for word, tf in Comment.set_of_words.items():
+            list_of_words.append(word)
+        writer.writerow(list_of_words)
+        for comment in comments_obj_list:
+            writer.writerow(comment.vector)
+
+
+def KNN_class_prediction(test_comment, training_obj_list):
+    similarity = []
+        for test_case_obj in test_case_obj_list:
+            similarity.append(
+                test_case_obj.claculate_cosine_similarity(test_comment))
 
 
 if __name__ == "__main__":
@@ -193,10 +218,20 @@ if __name__ == "__main__":
     selected_ds_index = int(
         input("Please select one of the above datasets for processing: ")) - 1
 
-    comments = read_from_file(available_datasets[selected_ds_index])
+    comments_obj_list = read_from_file(available_datasets[selected_ds_index])
 
     # 70٪ of selected dataset uses for training and 30% remaining uses for testing
-    training_dataset = comments[: int(0.7 * len(comments))]
-    test_case_dataset = comments[int(0.7 * len(comments)):]
+    training_obj_list = comments_obj_list[: int(0.7 * len(comments_obj_list))]
+    test_case_obj_list = comments_obj_list[int(0.7 * len(comments_obj_list)):]
 
-    # preprocess_training_dataset(training_dataset)
+    # processing training dataset
+    preprocess_comments(training_obj_list)
+    create_set_of_words(training_obj_list)
+    init_comment_vectores(training_obj_list)
+    save_structured_data_set(training_obj_list)
+
+    # prcessing test case dataset
+    preprocess_comments(training_obj_list)
+    init_comment_vectores(training_obj_list)
+
+    KNN_class_prediction()
