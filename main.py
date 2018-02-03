@@ -1,35 +1,66 @@
+# database implementation project
+# Subject: Comment Spam Filtering on YouTube
+# Based on a paper in 'Machine Learning and Applications (ICMLA), 2015 IEEE 14th International Conference'
+# Sahar Nafisi      (9321170026)
+# Alireza Mohammadi (9321170019)
+# Advisor: Dr Ayoub Bagheri
+# Kashan University(Winter 2018)
+
+# A library for working with dataset files (*.csv)
 import csv
+
+# Regular expressions
 import re
 import string
-import nltk
 
+# natural language toolkit
+import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize
-
 nltk.download('punkt')
 nltk.download('stopwords')
 
 
 class Comment:
+    """Every comment becomes an instance of this class"""
 
+    # A static variable that is common between all objects of this class
+    # containes a set of all words without duplicat (bag of words)
     set_of_words = None
 
     def __init__(self, id, content, real_class):
+
+        # comment ID
         self.id = id
+
+        # raw text of comment (not processed)
         self.content = content
+
+        # processed content of comment (at first this variable is same as 'content')
         self.processed_content = content
+
+        # comment class that is read from dataset (for evaluate result of prediction)
         self.real_class = "spam" if(real_class == "1") else "no_spam"
+
+        # class that our algorithm predict (spam or ham)
         self.predicted_class = None
+
+        # N dimension Vector (N: number of items in 'set_of_words')
         self.vector = []
 
     def __standardize_urls(self):
+        # Replace all of URLs in comment with "replacedurl" phrase
+        # this will improve accuracy
         url_regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
         self.processed_content = re.sub(
             url_regex, "replacedurl", self.processed_content)
 
     def __remove_special_chars(self):
+        # in some comments there was some weird phrases that we don't know what are theme
+        # probabely these have been created after coping comments from .html pages
+        # anyway we removed theme bacause presence of theme reduces accuacy
         self.processed_content = self.processed_content.replace(u'\ufeff', '')
 
     def __tokenize_comments(self):
@@ -49,6 +80,7 @@ class Comment:
         self.processed_content = new_review
 
     def __delete_stopwords(self):
+        # remove stopwords (such as 'the, is, at, which, on and ...')
         new_review = []
 
         for token in self.processed_content:
