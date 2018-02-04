@@ -130,6 +130,7 @@ class Comment:
                 self.processed_content.count(word) / self.set_of_words[word])  # represents tf-idf
 
     def calculate_lenght(self):
+        # calculates lenght of vector for cosine similarity formula
         middle_sum = 0
         for item in self.vector:
             middle_sum += item * item
@@ -147,7 +148,10 @@ class Comment:
         for i in range(0, len(self.vector)):
             middle_sum += self.vector[i] * comment.vector[i]
 
-        return middle_sum / (len1 * len2)
+        if len1 * len2 == 0:
+            return 1
+        else:
+            return middle_sum / (len1 * len2)
 
 
 def list_of_datesets():
@@ -192,7 +196,8 @@ def init_comment_vectores(comments_obj_list):
 
 
 def save_structured_data_set(comments_obj_list):
-    with open('temp.csv', 'w', encoding="utf8", newline='') as csvfile:
+    # saves training dataset vectors on disk
+    with open('training_dataset_tfidf.csv', 'w', encoding="utf8", newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         list_of_words = []
         for word, tf in Comment.set_of_words.items():
@@ -202,14 +207,50 @@ def save_structured_data_set(comments_obj_list):
             writer.writerow(comment.vector)
 
 
-def KNN_class_prediction(test_comment, training_obj_list):
-    similarity = []
-        for test_case_obj in test_case_obj_list:
-            similarity.append(
-                test_case_obj.claculate_cosine_similarity(test_comment))
+def KNN_class_prediction(test_comment, training_obj_list, k):
+    # this function get a comment object as first argument and predicts class of the comment
+    # second argument is training dataset and third argument is K
+
+    # in this dictionary, keys are cosine similarity and values are real class
+    similarity = {}
+    for trainig_obj in training_obj_list:
+        similarity[
+            test_comment.claculate_cosine_similarity(trainig_obj)] = trainig_obj.real_class
+
+    # class of k nearest neighbors adds to this list
+    k_nearest = []
+    for i in range(0, k):
+        if len(similarity.keys()) > 1:
+            max_key = max(similarity, key=int)
+            k_nearest.append(similarity[max_key])
+            similarity.pop(max_key)
+
+    spam_num = k_nearest.count("spam")
+    ham_num = k_nearest.count("no_spam")
+
+    # most frequent class between K neighbors select as predicted class
+    if spam_num > ham_num:
+        test_comment.predicted_class = "spam"
+    elif spam_num < ham_num:
+        test_comment.predicted_class = "no_spam"
+    else:
+        if len(k_nearest) == 0:
+            test_comment.predicted_class = "no_spam"
+        else:
+            test_comment.predicted_class = k_nearest[0]
+
+
+def save_test_case_dataset_results(comments_obj_list):
+    # saves results of test case dataset on disk
+    with open('test_case_dataset_results.csv', 'w', encoding="utf8", newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(['id', 'comment', 'real_class', 'predicted_class'])
+        for c in comments_obj_list:
+            writer.writerow([c.id, c.content, c.real_class, c.predicted_class])
 
 
 if __name__ == "__main__":
+
     available_datasets = list_of_datesets()
 
     for i in range(0, len(available_datasets)):
@@ -224,14 +265,42 @@ if __name__ == "__main__":
     training_obj_list = comments_obj_list[: int(0.7 * len(comments_obj_list))]
     test_case_obj_list = comments_obj_list[int(0.7 * len(comments_obj_list)):]
 
-    # processing training dataset
-    preprocess_comments(training_obj_list)
-    create_set_of_words(training_obj_list)
-    init_comment_vectores(training_obj_list)
+    # preprocessing training dataset
+    preprocess_comments(comments_obj_list)
+    create_set_of_words(comments_obj_list)
+    init_comment_vectores(comments_obj_list)
     save_structured_data_set(training_obj_list)
 
-    # prcessing test case dataset
-    preprocess_comments(training_obj_list)
-    init_comment_vectores(training_obj_list)
+    # executes KNN algorithm for all comments in test case dataset
+    for c in test_case_obj_list:
+        KNN_class_prediction(c, training_obj_list, 3)
 
-    KNN_class_prediction()
+    # save results on disk
+    save_test_case_dataset_results(test_case_obj_list)
+
+    # Evaluation of results
+    tp = tn = fp = fn = 0
+
+    for comment in test_case_obj_list:
+        if comment.predicted_class == "spam" and comment.real_class == "spam":
+            tn += 1
+        elif comment.predicted_class == "spam" and comment.real_class == "no_spam":
+            fn += 1
+        elif comment.predicted_class == "no_spam" and comment.real_class == "spam":
+            fp += 1
+        elif comment.predicted_class == "no_spam" and comment.real_class == "no_spam":
+            tp += 1
+
+    accuracy = (tp + tn) / (tp + tn + fn + fp)
+    print("Accuracy:\t\t\t " + str(accuracy))
+    precision = tp / (tp + fp)
+    print("Precision:\t\t\t " + str(precision))
+    recall = tp / (tp + fn)
+    print("Recall:\t\t\t\t " + str(recall))
+    f_measure = (2 * precision * recall) / (precision + recall)
+    print("F-Measure:\t\t\t " + str(f_measure))
+    blocked_ham = fn / (tp + fn)
+    print("Blocked Ham Rate:\t\t " + str(blocked_ham))
+    true_negative = tn / (tn + fp)
+    print("True Negative Recognition Rate:\t " +
+          str(true_negative))
